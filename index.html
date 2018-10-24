@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>ECharts</title>
+  <!-- 引入 echarts.js -->
+  <script src="./lib/echarts.js"></script>
+  <script src="./lib/echarts-gl.js"></script>
+</head>
+
+<body>
+  <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+  <div id="scatter" style="width: 800px;height:600px;"></div>
+  <script type="text/javascript">
+
+    let myChart = echarts.init(document.getElementById('scatter'))
+
+    require('electron').ipcRenderer.on('data', (event, data) => {
+      // 使用指定的配置项和数据显示图表。
+      myChart.setOption({
+        grid3D: {},
+        xAxis3D: {},
+        yAxis3D: {},
+        zAxis3D: { max: 100 },
+        series: [{
+          type: 'scatter3D',
+          data: data
+        }]
+      })
+    })
+
+  </script>
+</body>
+
+</html>
