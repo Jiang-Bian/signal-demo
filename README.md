@@ -13,6 +13,9 @@ git clone https://github.com/Jiang-Bian/signal-demo.git
 cd signal-demo
 # Install dependencies
 npm install
+# Rebuild Node.js package to Electron
+npx electron-rebuild
+
 # Run the app
 npm start
 ```

@@ -1,5 +1,7 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow } = require('electron')
+const SerialPort = require('serialport')
+const dataParser = require('./data-parser')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -7,11 +9,11 @@ let mainWindow
 
 function createWindow() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({ width: 900, height: 800 })
+  mainWindow = new BrowserWindow({ width: 1200, height: 800 })
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
-  mainWindow.toggleDevTools();
+  //mainWindow.toggleDevTools();
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -47,31 +49,38 @@ app.on('activate', function () {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+// SerialPort.list().then(data => {
+//   console.log(data)
+// })
 
-// 基于准备好的dom，初始化echarts实例
-function makeGaussian(amplitude, x0, y0, sigmaX, sigmaY) {
-  return function (amplitude, x0, y0, sigmaX, sigmaY, x, y) {
-    var exponent = -(
-      (Math.pow(x - x0, 2) / (2 * Math.pow(sigmaX, 2)))
-      + (Math.pow(y - y0, 2) / (2 * Math.pow(sigmaY, 2)))
-    );
-    return amplitude * Math.pow(Math.E, exponent);
-  }.bind(null, amplitude, x0, y0, sigmaX, sigmaY);
-}
-// 创建一个高斯分布函数
-var gaussian = makeGaussian(50, 0, 0, 20, 20);
+dataParser.listen()
+  .on('data', data => {
+    //console.log(data)
+    console.log(data.objs)
+    let rawData = []
+    for (let obj of data.objs) {
+      rawData.push([obj.x, obj.y, obj.z])
+    }
+    //console.log(rawData)
+    mainWindow.webContents.send('data', rawData)
+  })
 
-setInterval(() => {
-  let data = [];
-  for (var i = 0; i < 100; i++) {
-    // x, y 随机分布
-    let x = Math.random() * 100 - 50;
-    let y = Math.random() * 100 - 50;
-    let z = gaussian(x, y);
-    data.push([x, y, z]);
-  }
-  mainWindow.webContents.send('data', data)
-}, 1000)
-
+new SerialPort('/dev/ttyUSB0', { baudRate: 921600, autoOpen: true })
+  .on('open', () => {
+    console.log('opended!')
+  })
+  .on('close', () => {
+    console.log('closed!')
+  })
+  .on('error', err => {
+    console.log(err)
+  })
+  .on('data', data => {
+    //console.log(data.length, data)
+    try {
+      dataParser.parse(data)
+    } catch (err) {
+      console.log(err)
+      return
+    }
+  })
